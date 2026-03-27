@@ -106,3 +106,30 @@ export const checkoutService = async (userId) => {
 
   return order;
 };
+
+/*
+=====================================================
+GET USER ORDERS SERVICE
+=====================================================
+Returns all orders belonging to the authenticated user.
+*/
+
+export const getUserOrdersService = async (userId) => {
+  const orders = await prisma.order.findMany({
+    where: {
+      userId: Number(userId)
+    },
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  return orders;
+};
