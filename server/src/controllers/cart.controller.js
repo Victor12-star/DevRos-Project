@@ -1,6 +1,7 @@
 
 import { addToCartService } from "../services/cart.service.js";
 import { getCartService } from "../services/cart.service.js";
+import { updateCartItemService } from "../services/cart.service.js";
 
 /*
 =====================================================
@@ -90,6 +91,62 @@ try {
 
 } catch (error) {
     return res.status(500).json({
+    message: error.message
+    });
+}
+};
+
+
+/*
+=====================================================
+UPDATE CART ITEM CONTROLLER
+=====================================================
+
+Endpoint:
+PATCH /api/cart/:productId
+
+Purpose:
+Updates the quantity of a specific product in the
+authenticated user's cart.
+*/
+
+export const updateCartItem = async (req, res) => {
+try {
+    // Extract authenticated user ID
+    const userId = req.user.id;
+
+    // Extract productId from URL
+    const productId = Number(req.params.productId);
+
+    // Extract quantity from request body
+    const { quantity } = req.body;
+
+    if (!productId || isNaN(productId)) {
+    return res.status(400).json({
+        message: "Invalid product ID"
+    });
+    }
+
+    if (!quantity) {
+    return res.status(400).json({
+        message: "Quantity is required"
+    });
+    }
+
+    // Call service
+    const updatedItem = await updateCartItemService(
+    userId,
+    productId,
+    Number(quantity)
+    );
+
+    return res.status(200).json({
+    message: "Cart item updated successfully",
+    item: updatedItem
+    });
+
+} catch (error) {
+    return res.status(400).json({
     message: error.message
     });
 }

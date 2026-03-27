@@ -91,3 +91,74 @@ const total = formattedItems.reduce((sum, item) => sum + item.subtotal, 0);
     total
 };
 };
+
+/*
+=====================================================
+UPDATE CART ITEM QUANTITY SERVICE
+=====================================================
+
+Purpose:
+Updates the quantity of a specific product in the
+authenticated user's cart.
+
+Flow:
+1. Find the user's cart
+2. Verify the product exists in the cart
+3. Update the quantity
+4. Return the updated cart item
+*/
+
+export const updateCartItemService = async (userId, productId, quantity) => {
+  // Validate quantity
+if (!quantity || quantity <= 0) {
+    throw new Error("Quantity must be greater than 0");
+}
+
+  // 1. Find the user's cart
+const cart = await prisma.cart.findUnique({
+    where: { userId }
+});
+
+if (!cart) {
+    throw new Error("Cart not found");
+}
+
+  // 2. Check if the product exists in the cart
+const cartItem = await prisma.cartItem.findUnique({
+    where: {
+    cartId_productId: {
+        cartId: cart.id,
+        productId
+    }
+    }
+});
+
+if (!cartItem) {
+    throw new Error("Product not found in cart");
+}
+
+  // 3. Update the quantity
+const updatedItem = await prisma.cartItem.update({
+    where: {
+    cartId_productId: {
+        cartId: cart.id,
+        productId
+    }
+    },
+    data: {
+    quantity
+    },
+    include: {
+    product: true
+    }
+});
+
+  // 4. Return formatted response
+    return {
+    productId: updatedItem.product.id,
+    name: updatedItem.product.name,
+    price: updatedItem.product.price,
+    quantity: updatedItem.quantity,
+    subtotal: updatedItem.product.price * updatedItem.quantity
+};
+};
