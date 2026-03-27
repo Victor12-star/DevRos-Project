@@ -6,6 +6,8 @@ import helmet from "helmet";
 import productRoutes from "./routes/product.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
+import orderRoutes from "./routes/order.routes.js";
+
 
 const app = express();
 
@@ -48,5 +50,7 @@ app.use("/api/products", productRoutes);
 
 
 app.use("/api/cart", cartRoutes);
+
+app.use("/api/orders", orderRoutes);
 
 export default app;
