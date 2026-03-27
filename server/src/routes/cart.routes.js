@@ -4,6 +4,7 @@ import { addToCart } from "../controllers/cart.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { getCart } from "../controllers/cart.controller.js";
 import { updateCartItem } from "../controllers/cart.controller.js";
+import { removeCartItem } from "../controllers/cart.controller.js";
 
 /*
 =====================================================
@@ -36,5 +37,8 @@ router.get("/", authenticate, getCart);
 
 // Update quantity of a product in the cart
 router.patch("/:productId", authenticate, updateCartItem);
+
+// Remove a product from the cart
+router.delete("/:productId", authenticate, removeCartItem);
 
 export default router;

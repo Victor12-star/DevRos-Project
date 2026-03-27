@@ -2,6 +2,7 @@
 import { addToCartService } from "../services/cart.service.js";
 import { getCartService } from "../services/cart.service.js";
 import { updateCartItemService } from "../services/cart.service.js";
+import { removeCartItemService } from "../services/cart.service.js";
 
 /*
 =====================================================
@@ -144,6 +145,46 @@ try {
     message: "Cart item updated successfully",
     item: updatedItem
     });
+
+} catch (error) {
+    return res.status(400).json({
+    message: error.message
+    });
+}
+};
+
+
+/*
+=====================================================
+REMOVE CART ITEM CONTROLLER
+=====================================================
+
+Endpoint:
+DELETE /api/cart/:productId
+
+Purpose:
+Removes a specific product from the authenticated
+user's cart.
+*/
+
+export const removeCartItem = async (req, res) => {
+try {
+    // Extract authenticated user ID
+    const userId = req.user.id;
+
+    // Extract productId from URL parameters
+    const productId = Number(req.params.productId);
+
+    if (!productId || isNaN(productId)) {
+        return res.status(400).json({
+        message: "Invalid product ID"
+    });
+    }
+
+    // Call service
+    const result = await removeCartItemService(userId, productId);
+
+    return res.status(200).json(result);
 
 } catch (error) {
     return res.status(400).json({

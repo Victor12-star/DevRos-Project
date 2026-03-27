@@ -162,3 +162,59 @@ const updatedItem = await prisma.cartItem.update({
     subtotal: updatedItem.product.price * updatedItem.quantity
 };
 };
+
+/*
+=====================================================
+REMOVE CART ITEM SERVICE
+=====================================================
+
+Purpose:
+Removes a specific product from the authenticated
+user's cart.
+
+Flow:
+1. Find the user's cart
+2. Check if the product exists in the cart
+3. Delete the cart item
+4. Return a success message
+*/
+
+export const removeCartItemService = async (userId, productId) => {
+  // 1. Find the user's cart
+const cart = await prisma.cart.findUnique({
+    where: { userId }
+});
+
+if (!cart) {
+    throw new Error("Cart not found");
+}
+
+  // 2. Check if the product exists in the cart
+const cartItem = await prisma.cartItem.findUnique({
+    where: {
+    cartId_productId: {
+        cartId: cart.id,
+        productId
+    }
+    }
+});
+
+if (!cartItem) {
+    throw new Error("Product not found in cart");
+}
+
+  // 3. Delete the cart item
+await prisma.cartItem.delete({
+    where: {
+    cartId_productId: {
+        cartId: cart.id,
+        productId
+    }
+    }
+});
+
+  // 4. Return success response
+    return {
+    message: "Item removed from cart successfully"
+};
+};
