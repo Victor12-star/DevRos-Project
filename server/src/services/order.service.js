@@ -133,3 +133,32 @@ export const getUserOrdersService = async (userId) => {
 
   return orders;
 };
+
+/*
+=====================================================
+GET ORDER BY ID SERVICE
+=====================================================
+Returns a single order if it belongs to the user.
+*/
+
+export const getOrderByIdService = async (userId, orderId) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: Number(orderId),
+      userId: Number(userId)
+    },
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      }
+    }
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  return order;
+};

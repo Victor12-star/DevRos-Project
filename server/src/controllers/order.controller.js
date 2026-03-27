@@ -27,7 +27,6 @@ try {
 };
 
 
-
 /*
 =====================================================
 GET USER ORDERS CONTROLLER
@@ -47,6 +46,33 @@ try {
 
 } catch (error) {
     res.status(400).json({
+    message: error.message
+    });
+}
+};
+
+import { getOrderByIdService } from "../services/order.service.js";
+
+/*
+=====================================================
+GET ORDER BY ID CONTROLLER
+=====================================================
+Endpoint: GET /api/orders/:id
+*/
+
+export const getOrderById = async (req, res) => {
+try {
+    const userId = req.user.id;
+    const orderId = req.params.id;
+
+    const order = await getOrderByIdService(userId, orderId);
+
+    res.status(200).json({
+    order
+    });
+
+} catch (error) {
+    res.status(404).json({
     message: error.message
     });
 }
