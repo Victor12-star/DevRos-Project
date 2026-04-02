@@ -1,20 +1,15 @@
-
 import express from "express";
-import { checkout } from "../controllers/order.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
-import { getUserOrders } from "../controllers/order.controller.js";
-import { getOrderById } from "../controllers/order.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
+import {
+  getCart,
+  addToCart,
+  removeFromCart
+} from "../controllers/cart.controller.js";
 
 const router = express.Router();
 
-/*
-POST /api/orders/checkout
-Creates a new order from the user's cart.
-*/
-router.post("/checkout", authenticate, checkout);
-
-router.get("/", authenticate, getUserOrders);
-
-router.get("/:id", authenticate, getOrderById);
+router.get("/", protect, getCart);
+router.post("/", protect, addToCart);
+router.delete("/:id", protect, removeFromCart);
 
 export default router;

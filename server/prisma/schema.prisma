@@ -72,14 +72,28 @@ model RefreshToken {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  userId     Int
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items      OrderItem[]
-  total      Float
-  status     OrderStatus @default(PENDING)
-  createdAt  DateTime    @default(now())
+  id               Int            @id @default(autoincrement())
+  userId           Int
+  user             User           @relation(fields: [userId], references: [id])
+
+  total            Int
+  status           OrderStatus    @default(PENDING)
+
+  paymentStatus    PaymentStatus  @default(PENDING)
+  paymentIntentId  String?        @unique
+  idempotencyKey   String?        @unique
+
+  createdAt        DateTime       @default(now())
+  items            OrderItem[]
 }
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+
 
 model OrderItem {
   id        Int     @id @default(autoincrement())

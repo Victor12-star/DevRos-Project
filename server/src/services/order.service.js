@@ -162,3 +162,56 @@ export const getOrderByIdService = async (userId, orderId) => {
 
   return order;
 };
+
+/*
+=====================================================
+UPDATE ORDER STATUS SERVICE
+=====================================================
+Updates order status (Admin only).
+*/
+
+export const updateOrderStatusService = async (orderId, status) => {
+
+  const allowedStatuses = [
+    "PENDING",
+    "PAID",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED"
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    throw new Error("Invalid order status");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: Number(orderId) }
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: Number(orderId) },
+    data: { status }
+  });
+
+  return updatedOrder;
+};
+
+export const getMyOrdersService = async (userId) => {
+  return await prisma.order.findMany({
+    where: { userId },
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+};

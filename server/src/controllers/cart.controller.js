@@ -1,194 +1,86 @@
-
-import { addToCartService } from "../services/cart.service.js";
-import { getCartService } from "../services/cart.service.js";
-import { updateCartItemService } from "../services/cart.service.js";
-import { removeCartItemService } from "../services/cart.service.js";
+import prisma from "../config/prisma.js";
 
 /*
-=====================================================
-ADD TO CART CONTROLLER
-=====================================================
-
-Purpose:
-This controller handles the HTTP request for adding
-a product to the authenticated user's cart.
-
-Flow:
-1. Get userId from authentication middleware
-2. Extract productId and quantity from request body
-3. Validate input
-4. Call service layer (business logic)
-5. Return response to client
+=====================================
+GET USER CART
+=====================================
 */
-
-export const addToCart = async (req, res) => {
-try {
-    // 1. Get authenticated user's ID
-    // This must be set by your JWT auth middleware
+export const getCart = async (req, res) => {
+  try {
     const userId = req.user.id;
 
-    // 2. Extract productId and quantity from frontend request
+    const cartItems = await prisma.cartItem.findMany({
+      where: { userId },
+      include: { product: true }
+    });
+
+    const total = cartItems.reduce(
+      (sum, item) => sum + item.quantity * item.product.price,
+      0
+    );
+
+    return res.status(200).json({
+      items: cartItems,
+      total
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/*
+=====================================
+ADD TO CART
+=====================================
+*/
+export const addToCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
     const { productId, quantity } = req.body;
 
-    /*
-    3. Basic validation
-    - productId must exist
-    - quantity must exist
-    - quantity must be greater than 0
-    */
-    if (!productId || !quantity) {
-        return res.status(400).json({
-        message: "Product ID and quantity are required"
+    const existingItem = await prisma.cartItem.findFirst({
+      where: { userId, productId }
     });
+
+    if (existingItem) {
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + quantity }
+      });
+    } else {
+      await prisma.cartItem.create({
+        data: { userId, productId, quantity }
+      });
     }
 
-    if (Number(quantity) <= 0) {
-        return res.status(400).json({
-        message: "Quantity must be greater than 0"
-    });
-    }
+    return res.status(200).json({ message: "Product added to cart" });
 
-    /*
-    4. Call service layer
-    Service handles:
-    - Finding or creating cart
-    - Checking existing cart item
-    - Updating or creating cart item
-    */
-    const cartItem = await addToCartService(
-    userId,
-    Number(productId),
-    Number(quantity)
-    );
-
-    /*
-    5. Send success response
-    We return updated/created cart item
-    */
-    return res.status(200).json({
-    message: "Product added to cart successfully",
-    cartItem
-    });
-
-} catch (error) {
-    /*
-    If anything fails (validation error or DB error),
-    we send a 400 response with error message
-    */
-    return res.status(400).json({
-    message: error.message
-    });
-}
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 };
-
-
-export const getCart = async (req, res) => {
-try {
-    const userId = req.user.id;
-
-    const cart = await getCartService(userId);
-
-    return res.status(200).json(cart);
-
-} catch (error) {
-    return res.status(500).json({
-    message: error.message
-    });
-}
-};
-
 
 /*
-=====================================================
-UPDATE CART ITEM CONTROLLER
-=====================================================
-
-Endpoint:
-PATCH /api/cart/:productId
-
-Purpose:
-Updates the quantity of a specific product in the
-authenticated user's cart.
+=====================================
+REMOVE FROM CART
+=====================================
 */
-
-export const updateCartItem = async (req, res) => {
-try {
-    // Extract authenticated user ID
+export const removeFromCart = async (req, res) => {
+  try {
     const userId = req.user.id;
+    const cartItemId = parseInt(req.params.id);
 
-    // Extract productId from URL
-    const productId = Number(req.params.productId);
-
-    // Extract quantity from request body
-    const { quantity } = req.body;
-
-    if (!productId || isNaN(productId)) {
-    return res.status(400).json({
-        message: "Invalid product ID"
-    });
-    }
-
-    if (!quantity) {
-    return res.status(400).json({
-        message: "Quantity is required"
-    });
-    }
-
-    // Call service
-    const updatedItem = await updateCartItemService(
-    userId,
-    productId,
-    Number(quantity)
-    );
-
-    return res.status(200).json({
-    message: "Cart item updated successfully",
-    item: updatedItem
+    await prisma.cartItem.delete({
+      where: {
+        id: cartItemId,
+        userId
+      }
     });
 
-} catch (error) {
-    return res.status(400).json({
-    message: error.message
-    });
-}
-};
+    return res.status(200).json({ message: "Item removed from cart" });
 
-
-/*
-=====================================================
-REMOVE CART ITEM CONTROLLER
-=====================================================
-
-Endpoint:
-DELETE /api/cart/:productId
-
-Purpose:
-Removes a specific product from the authenticated
-user's cart.
-*/
-
-export const removeCartItem = async (req, res) => {
-try {
-    // Extract authenticated user ID
-    const userId = req.user.id;
-
-    // Extract productId from URL parameters
-    const productId = Number(req.params.productId);
-
-    if (!productId || isNaN(productId)) {
-        return res.status(400).json({
-        message: "Invalid product ID"
-    });
-    }
-
-    // Call service
-    const result = await removeCartItemService(userId, productId);
-
-    return res.status(200).json(result);
-
-} catch (error) {
-    return res.status(400).json({
-    message: error.message
-    });
-}
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 };

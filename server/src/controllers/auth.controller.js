@@ -146,71 +146,58 @@ Flow:
 6. Send secure cookies
 */
 export const login = async (req, res) => {
-try {
+  try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({
-        message: "Email and password required"
-    });
-    }
-
-    // Find user by email
     const user = await prisma.user.findUnique({
-        where: { email }
+      where: { email }
     });
 
-    // Do not reveal if email or password was wrong (security practice)
     if (!user) {
-        return res.status(401).json({
-        message: "Invalid credentials"
-    });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    /*
-    bcrypt.compare hashes the input password
-    and compares it with stored hashed password.
-    This is safer than manually hashing and comparing.
-    */
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!passwordMatch) {
-        return res.status(401).json({
-        message: "Invalid credentials"
-    });
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id);
     const hashedRefreshToken = hashToken(refreshToken);
 
     await prisma.refreshToken.create({
-    data: {
+      data: {
         tokenHash: hashedRefreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    }
+        userId: user.id
+      }
     });
 
     res.cookie("accessToken", accessToken, {
-    ...COOKIE_OPTIONS,
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
       maxAge: 15 * 60 * 1000
     });
 
     res.cookie("refreshToken", refreshToken, {
-    ...COOKIE_OPTIONS,
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({
-    message: "Login successful"
+    return res.status(200).json({
+      message: "Login successful"
     });
 
-} catch (error) {
-    res.status(500).json({ message: "Server error" });
-}
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message
+    });
+  }
 };
-
 
 /*
 =====================================================
