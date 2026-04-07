@@ -1,5 +1,7 @@
 import express from "express";
 import { protect } from "../middleware/auth.middleware.js";
+import { checkout } from "../controllers/checkout.controller.js";
+
 import {
   getCart,
   addToCart,
@@ -12,5 +14,6 @@ const router = express.Router();
 router.get("/", protect, getCart);
 router.post("/", protect, addToCart);
 router.delete("/:id", protect, removeFromCart);
+router.post("/checkout", protect, checkout);
 
 export default router;
